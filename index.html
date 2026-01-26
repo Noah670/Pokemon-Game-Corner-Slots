@@ -31,6 +31,24 @@
       .neon-panel {
         box-shadow: 0 0 12px rgba(250, 204, 21, 0.45), inset 0 0 8px rgba(0, 0, 0, 0.3);
       }
+      .gba-panel {
+        background: linear-gradient(145deg, #1b1445 0%, #2b1c6f 45%, #2a144f 100%);
+        border: 2px solid rgba(252, 211, 77, 0.6);
+        box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.08),
+          0 12px 24px rgba(15, 10, 46, 0.6);
+      }
+      .synth-grid {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.95));
+        border: 1px solid rgba(236, 72, 153, 0.4);
+      }
+      .payline {
+        position: absolute;
+        inset: 50% 8% auto 8%;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, #facc15, transparent);
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+        transform: translateY(-50%);
+      }
     </style>
   </head>
   <body class="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 text-white">
@@ -46,7 +64,11 @@
       const PokemonGameCorner = () => {
         const [coins, setCoins] = useState(500);
         const [screen, setScreen] = useState("casino");
-        const [slots, setSlots] = useState(["7", "7", "7"]);
+        const [slots, setSlots] = useState([
+          ["7", "💎", "BAR"],
+          ["7", "⭐", "🍒"],
+          ["7", "🔔", "BAR"],
+        ]);
         const [spinning, setSpinning] = useState(false);
         const [bet, setBet] = useState(10);
         const [prizes, setPrizes] = useState([]);
@@ -98,6 +120,11 @@
           ["🪑", "⬜", "⬜", "🚪", "⬜", "⬜", "🪑"],
         ];
 
+        const buildSlots = () =>
+          Array.from({ length: 3 }, () =>
+            Array.from({ length: 3 }, () => symbols[Math.floor(Math.random() * symbols.length)])
+          );
+
         const spinSlots = () => {
           if (coins < bet || spinning) return;
 
@@ -110,14 +137,12 @@
           let elapsed = 0;
 
           const interval = setInterval(() => {
-            setSlots(symbols.map(() => symbols[Math.floor(Math.random() * symbols.length)]));
+            setSlots(buildSlots());
             elapsed += spinInterval;
 
             if (elapsed >= spinDuration) {
               clearInterval(interval);
-              const finalSlots = symbols.map(
-                () => symbols[Math.floor(Math.random() * symbols.length)]
-              );
+              const finalSlots = buildSlots();
               setSlots(finalSlots);
               checkWin(finalSlots);
               setSpinning(false);
@@ -127,24 +152,25 @@
 
         const checkWin = (result) => {
           let winAmount = 0;
+          const payline = result.map((column) => column[1]);
 
-          if (result[0] === result[1] && result[1] === result[2]) {
-            if (result[0] === "7") winAmount = bet * 100;
-            else if (result[0] === "💎") winAmount = bet * 50;
-            else if (result[0] === "🔔") winAmount = bet * 30;
-            else if (result[0] === "⭐") winAmount = bet * 20;
-            else if (result[0] === "🍒") winAmount = bet * 15;
-            else if (result[0] === "BAR") winAmount = bet * 10;
-          } else if (result.filter((s) => s === "🍒").length === 2) {
+          if (payline[0] === payline[1] && payline[1] === payline[2]) {
+            if (payline[0] === "7") winAmount = bet * 100;
+            else if (payline[0] === "💎") winAmount = bet * 50;
+            else if (payline[0] === "🔔") winAmount = bet * 30;
+            else if (payline[0] === "⭐") winAmount = bet * 20;
+            else if (payline[0] === "🍒") winAmount = bet * 15;
+            else if (payline[0] === "BAR") winAmount = bet * 10;
+          } else if (payline.filter((s) => s === "🍒").length === 2) {
             winAmount = bet * 5;
           }
 
           if (winAmount > 0) {
             setCoins((currentCoins) => currentCoins + winAmount);
             setTotalWins((wins) => wins + 1);
-            setStatusMessage(`You won ${winAmount} coins!`);
+            setStatusMessage(`Payline win! You earned ${winAmount} coins.`);
           } else {
-            setStatusMessage("No win this time. Try again!");
+            setStatusMessage("No payline win. Shift your luck and spin again!");
           }
         };
 
@@ -370,18 +396,31 @@
 
                 <h2 className="text-3xl font-bold mb-6 text-center">🎰 Slot Machine 🎰</h2>
 
-                <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 p-6 rounded-lg shadow-2xl mb-6 neon-panel">
-                  <div className="flex justify-center gap-4 mb-6">
-                    {slots.map((symbol, i) => (
-                      <div
-                        key={i}
-                        className={`slot-reel w-24 h-24 bg-white rounded-lg flex items-center justify-center text-5xl font-bold shadow-lg ${
-                          spinning ? "spin-blur" : ""
-                        }`}
-                      >
-                        {symbol}
-                      </div>
-                    ))}
+                <div className="gba-panel p-6 rounded-lg shadow-2xl mb-6 neon-panel">
+                  <div className="text-center mb-4 text-yellow-200 text-sm tracking-widest uppercase">
+                    Celadon Synth Slots
+                  </div>
+                  <div className="relative synth-grid rounded-2xl p-4">
+                    <div className="payline"></div>
+                    <div className="flex justify-center gap-4">
+                      {slots.map((column, columnIndex) => (
+                        <div
+                          key={columnIndex}
+                          className="flex flex-col items-center gap-3 rounded-xl bg-white/90 px-4 py-3"
+                        >
+                          {column.map((symbol, rowIndex) => (
+                            <div
+                              key={`${columnIndex}-${rowIndex}`}
+                              className={`slot-reel w-16 h-16 rounded-lg flex items-center justify-center text-4xl font-bold shadow-lg ${
+                                spinning ? "spin-blur" : ""
+                              } ${rowIndex === 1 ? "bg-yellow-200 text-purple-900" : "bg-white"}`}
+                            >
+                              {symbol}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 mb-4">
@@ -412,14 +451,14 @@
                 </div>
 
                 <div className="bg-white/10 p-4 rounded mb-4">
-                  <h3 className="font-bold mb-2 text-center">Gameplay Loop</h3>
+                  <h3 className="font-bold mb-2 text-center">Gameplay Loop (Payline)</h3>
                   <p className="text-sm text-center text-white/80">
                     {statusMessage}
                   </p>
                 </div>
 
                 <div className="bg-white/10 p-4 rounded">
-                  <h3 className="font-bold mb-2">Payouts:</h3>
+                  <h3 className="font-bold mb-2">Payouts (middle payline):</h3>
                   <div className="text-sm space-y-1">
                     <div>7-7-7: {bet * 100} coins</div>
                     <div>💎-💎-💎: {bet * 50} coins</div>
