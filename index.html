@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokémon Game Corner Slots</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Trebuchet MS", "Gill Sans", Arial, sans-serif;
+      }
+      .pixel-font {
+        font-family: "Press Start 2P", "Trebuchet MS", Arial, sans-serif;
+      }
+      .slot-reel {
+        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+      }
+      .spin-blur {
+        animation: reel-spin 0.6s linear infinite;
+        filter: blur(1.5px);
+        transform-origin: center;
+      }
+      @keyframes reel-spin {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-12px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+      .neon-panel {
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.45), inset 0 0 8px rgba(0, 0, 0, 0.3);
+      }
+      .gba-panel {
+        background: linear-gradient(145deg, #1b1445 0%, #2b1c6f 45%, #2a144f 100%);
+        border: 2px solid rgba(252, 211, 77, 0.6);
+        box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.08),
+          0 12px 24px rgba(15, 10, 46, 0.6);
+      }
+      .arcade-frame {
+        border-radius: 28px;
+        border: 4px solid #06b6d4;
+        box-shadow: 0 0 18px rgba(6, 182, 212, 0.7);
+      }
+      .slot-cabinet {
+        padding: 28px;
+      }
+      .cabinet-border {
+        border: 3px solid rgba(248, 250, 252, 0.2);
+        box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.4);
+      }
+      .synth-grid {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.95));
+        border: 1px solid rgba(236, 72, 153, 0.4);
+      }
+      .slot-window {
+        background: linear-gradient(180deg, #e5f2d5 0%, #f7f7e8 60%, #d5e8c5 100%);
+        border: 3px solid #0f172a;
+        box-shadow: inset 0 0 0 4px rgba(15, 23, 42, 0.2), 0 10px 20px rgba(15, 23, 42, 0.35);
+      }
+      .reel-strip {
+        border: 2px solid #0f172a;
+        box-shadow: inset 0 0 0 3px rgba(15, 23, 42, 0.15);
+      }
+      .reel-symbol {
+        border: 2px solid rgba(15, 23, 42, 0.2);
+        box-shadow: inset 0 0 10px rgba(15, 23, 42, 0.08);
+      }
+      .cabinet-title {
+        background: linear-gradient(180deg, #ff4fd8 0%, #d93b9a 60%, #b12276 100%);
+        border: 3px solid #0f172a;
+        box-shadow: inset 0 0 0 4px rgba(15, 23, 42, 0.2);
+      }
+      .coin-case {
+        background: linear-gradient(180deg, #0f172a 0%, #1f2a44 100%);
+        border: 2px solid #22d3ee;
+        box-shadow: inset 0 0 12px rgba(34, 211, 238, 0.35);
+      }
+      .reward-card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(88, 28, 135, 0.9));
+        border: 1px solid rgba(250, 204, 21, 0.6);
+        box-shadow: inset 0 0 8px rgba(250, 204, 21, 0.2);
+      }
+      .arcade-button {
+        border: 3px solid #0f172a;
+        box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.15), 0 6px 0 #1f2937;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .arcade-button:active {
+        transform: translateY(2px);
+        box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.15), 0 4px 0 #1f2937;
+      }
+      .payline {
+        position: absolute;
+        inset: 50% 8% auto 8%;
+        height: 6px;
+        background: linear-gradient(90deg, transparent, #facc15, transparent);
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+        transform: translateY(-50%);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 text-white">
+    <div id="root" class="p-4"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useEffect, useState } = React;
+
+      const PokemonGameCorner = () => {
+        const [coins, setCoins] = useState(500);
+        const [screen, setScreen] = useState("casino");
+        const [slots, setSlots] = useState([
+          ["BAR", "7", "7"],
+          ["⭐", "7", "🔔"],
+          ["🍒", "7", "BAR"],
+        ]);
+        const [spinning, setSpinning] = useState(false);
+        const [bet, setBet] = useState(10);
+        const [prizes, setPrizes] = useState([]);
+        const [soundOn, setSoundOn] = useState(true);
+        const [totalWins, setTotalWins] = useState(0);
+        const [location, setLocation] = useState({ x: 5, y: 5 });
+        const [casinoLocation, setCasinoLocation] = useState({ x: 2, y: 4 });
+        const [statusMessage, setStatusMessage] = useState("Place your bet and spin!");
+
+        const symbols = ["7", "💎", "🔔", "⭐", "🍒", "BAR"];
+        const townMap = [
+          ["🌳", "🌳", "🏠", "🌳", "🌳", "🌳", "🏠", "🌳", "🌳", "🌳"],
+          ["🌳", "⬜", "⬜", "⬜", "🌳", "⬜", "⬜", "⬜", "🌳", "🌳"],
+          ["🏠", "⬜", "🎰", "⬜", "⬜", "⬜", "🏪", "⬜", "⬜", "🌳"],
+          ["🌳", "⬜", "⬜", "⬜", "🌳", "⬜", "⬜", "⬜", "🌳", "🌳"],
+          ["🌳", "⬜", "⬜", "⬜", "🌳", "🌳", "⬜", "⬜", "⬜", "🌳"],
+          ["🌳", "⬜", "⬜", "⬜", "⬜", "⬜", "⬜", "🌳", "⬜", "🏠"],
+          ["🌳", "🌳", "⬜", "⬜", "⬜", "⬜", "⬜", "🌳", "⬜", "🌳"],
+          ["🌳", "🏠", "⬜", "⬜", "🌳", "⬜", "⬜", "⬜", "⬜", "🌳"],
+          ["🌳", "🌳", "🌳", "⬜", "🌳", "🌳", "⬜", "⬜", "🌳", "🌳"],
+          ["🌳", "🌳", "🌳", "🌳", "🌳", "🌳", "🌳", "🌳", "🌳", "🌳"],
+        ];
+
+        const prizeList = [
+          { name: "TM13 Ice Beam", cost: 4000, icon: "📀" },
+          { name: "TM24 Thunderbolt", cost: 4000, icon: "📀" },
+          { name: "TM35 Flamethrower", cost: 4000, icon: "📀" },
+          { name: "Porygon", cost: 9999, icon: "🧬" },
+          { name: "Dratini", cost: 2800, icon: "🐉" },
+          { name: "Abra", cost: 120, icon: "🌀" },
+          { name: "Eevee", cost: 800, icon: "🦊" },
+          { name: "Pikachu", cost: 1200, icon: "⚡" },
+        ];
+
+        const featuredPokemon = [
+          { name: "Pikachu", icon: "⚡" },
+          { name: "Eevee", icon: "🦊" },
+          { name: "Jigglypuff", icon: "🎤" },
+          { name: "Bulbasaur", icon: "🌱" },
+          { name: "Charmander", icon: "🔥" },
+          { name: "Squirtle", icon: "💧" },
+        ];
+
+        const casinoMap = [
+          ["🪑", "🎰", "🎰", "🎰", "🪑", "🪑", "🪑"],
+          ["🪑", "⬜", "⬜", "⬜", "⬜", "⬜", "🪑"],
+          ["🎰", "⬜", "⬜", "🎰", "⬜", "⬜", "🎰"],
+          ["🪑", "⬜", "⬜", "⬜", "⬜", "⬜", "🪑"],
+          ["🪑", "⬜", "⬜", "🚪", "⬜", "⬜", "🪑"],
+        ];
+
+        const buildSlots = () =>
+          Array.from({ length: 3 }, () =>
+            Array.from({ length: 3 }, () => symbols[Math.floor(Math.random() * symbols.length)])
+          );
+
+        const spinSlots = () => {
+          if (coins < bet || spinning) return;
+
+          setCoins((prevCoins) => prevCoins - bet);
+          setSpinning(true);
+          setStatusMessage("Spinning...");
+
+          const spinDuration = 1800;
+          const spinInterval = 100;
+          let elapsed = 0;
+
+          const interval = setInterval(() => {
+            setSlots(buildSlots());
+            elapsed += spinInterval;
+
+            if (elapsed >= spinDuration) {
+              clearInterval(interval);
+              const finalSlots = buildSlots();
+              setSlots(finalSlots);
+              checkWin(finalSlots);
+              setSpinning(false);
+            }
+          }, spinInterval);
+        };
+
+        const checkWin = (result) => {
+          let winAmount = 0;
+          const payline = result.map((column) => column[1]);
+
+          if (payline[0] === payline[1] && payline[1] === payline[2]) {
+            if (payline[0] === "7") winAmount = bet * 100;
+            else if (payline[0] === "💎") winAmount = bet * 50;
+            else if (payline[0] === "🔔") winAmount = bet * 30;
+            else if (payline[0] === "⭐") winAmount = bet * 20;
+            else if (payline[0] === "🍒") winAmount = bet * 15;
+            else if (payline[0] === "BAR") winAmount = bet * 10;
+          } else if (payline.filter((s) => s === "🍒").length === 2) {
+            winAmount = bet * 5;
+          }
+
+          if (winAmount > 0) {
+            setCoins((currentCoins) => currentCoins + winAmount);
+            setTotalWins((wins) => wins + 1);
+            setStatusMessage(`Payline win! You earned ${winAmount} coins.`);
+          } else {
+            setStatusMessage("No payline win. Shift your luck and spin again!");
+          }
+        };
+
+        const buyPrize = (prize) => {
+          if (coins >= prize.cost) {
+            setCoins((currentCoins) => currentCoins - prize.cost);
+            setPrizes((prevPrizes) => [...prevPrizes, prize]);
+          }
+        };
+
+        const movePlayer = (dx, dy) => {
+          const newX = Math.max(0, Math.min(9, location.x + dx));
+          const newY = Math.max(0, Math.min(9, location.y + dy));
+
+          const tile = townMap[newY][newX];
+          if (tile !== "🌳") {
+            setLocation({ x: newX, y: newY });
+
+            if (tile === "🎰") {
+              setScreen("casino");
+            } else if (tile === "🏪") {
+              setScreen("prizes");
+            }
+          }
+        };
+
+        const moveCasinoPlayer = (dx, dy) => {
+          const newX = Math.max(0, Math.min(6, casinoLocation.x + dx));
+          const newY = Math.max(0, Math.min(4, casinoLocation.y + dy));
+
+          const tile = casinoMap[newY][newX];
+          if (tile !== "🪑") {
+            setCasinoLocation({ x: newX, y: newY });
+            if (tile === "🎰") {
+              setScreen("slots");
+            } else if (tile === "🚪") {
+              setScreen("town");
+            }
+          }
+        };
+
+        useEffect(() => {
+          const handleKeyPress = (event) => {
+            if (screen !== "town" && screen !== "casino") return;
+
+            switch (event.key) {
+              case "ArrowUp":
+                screen === "town" ? movePlayer(0, -1) : moveCasinoPlayer(0, -1);
+                break;
+              case "ArrowDown":
+                screen === "town" ? movePlayer(0, 1) : moveCasinoPlayer(0, 1);
+                break;
+              case "ArrowLeft":
+                screen === "town" ? movePlayer(-1, 0) : moveCasinoPlayer(-1, 0);
+                break;
+              case "ArrowRight":
+                screen === "town" ? movePlayer(1, 0) : moveCasinoPlayer(1, 0);
+                break;
+              default:
+                break;
+            }
+          };
+
+          window.addEventListener("keydown", handleKeyPress);
+          return () => window.removeEventListener("keydown", handleKeyPress);
+        }, [location, casinoLocation, screen]);
+
+        return (
+          <div className="max-w-xl mx-auto">
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-t-lg p-4 shadow-lg">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🪙</span>
+                  <span className="text-xl font-bold">{coins} Coins</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSoundOn(!soundOn)}
+                    className="p-2 bg-white/20 rounded"
+                  >
+                    {soundOn ? "🔊" : "🔇"}
+                  </button>
+                  <div className="flex items-center gap-1 bg-white/20 px-3 py-2 rounded">
+                    <span>🏆</span>
+                    <span>{totalWins}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {screen === "town" && (
+              <div className="bg-gradient-to-b from-green-700 to-green-800 p-6 rounded-b-lg">
+                <h2 className="text-2xl font-bold mb-4 text-center">Celadon City</h2>
+
+                <div className="bg-green-900 p-4 rounded-lg mb-4 border-4 border-green-600">
+                  {townMap.map((row, y) => (
+                    <div key={y} className="flex justify-center">
+                      {row.map((tile, x) => (
+                        <div
+                          key={`${x}-${y}`}
+                          className="w-8 h-8 flex items-center justify-center text-lg"
+                        >
+                          {location.x === x && location.y === y ? "🧍" : tile}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <button
+                    className="col-start-2 bg-blue-600 p-3 rounded"
+                    onClick={() => movePlayer(0, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button className="bg-blue-600 p-3 rounded" onClick={() => movePlayer(-1, 0)}>
+                    ←
+                  </button>
+                  <button className="bg-blue-600 p-3 rounded" onClick={() => movePlayer(0, 1)}>
+                    ↓
+                  </button>
+                  <button className="bg-blue-600 p-3 rounded" onClick={() => movePlayer(1, 0)}>
+                    →
+                  </button>
+                </div>
+
+                <div className="bg-yellow-600 p-3 rounded text-center text-sm">
+                  🎰 Game Corner | 🏪 Prize Shop | 🏠 Houses | 🌳 Trees
+                </div>
+
+                <div className="mt-4 bg-white/10 p-4 rounded-lg">
+                  <h3 className="font-bold mb-2 text-center">Featured Pokémon</h3>
+                  <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                    {featuredPokemon.map((pokemon) => (
+                      <div key={pokemon.name} className="bg-white/10 rounded-lg p-2">
+                        <div className="text-2xl">{pokemon.icon}</div>
+                        <div>{pokemon.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {screen === "casino" && (
+              <div className="bg-gradient-to-b from-red-700 to-red-900 p-6 rounded-b-lg">
+                <button
+                  onClick={() => setScreen("town")}
+                  className="flex items-center gap-2 mb-4 bg-white/20 px-4 py-2 rounded hover:bg-white/30"
+                >
+                  ← Exit Game Corner
+                </button>
+
+                <h2 className="text-3xl font-bold mb-4 text-center">🎰 Game Corner Floor 🎰</h2>
+                <p className="text-sm text-center text-white/80 mb-4">
+                  Walk to a slot machine 🎰 to play, or head to the door 🚪 to leave.
+                </p>
+
+                <div className="bg-red-950/60 p-4 rounded-lg border border-white/10 mb-4 neon-panel">
+                  {casinoMap.map((row, y) => (
+                    <div key={y} className="flex justify-center">
+                      {row.map((tile, x) => (
+                        <div
+                          key={`${x}-${y}`}
+                          className="w-10 h-10 flex items-center justify-center text-lg"
+                        >
+                          {casinoLocation.x === x && casinoLocation.y === y ? "🧍" : tile}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <button
+                    className="col-start-2 bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(0, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(-1, 0)}
+                  >
+                    ←
+                  </button>
+                  <button
+                    className="bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(0, 1)}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    className="bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(1, 0)}
+                  >
+                    →
+                  </button>
+                </div>
+
+                <div className="bg-white/10 p-4 rounded">
+                  <h3 className="font-bold mb-2 text-center">Lucky Pokémon Lineup</h3>
+                  <div className="flex flex-wrap justify-center gap-3 text-sm">
+                    {featuredPokemon.map((pokemon) => (
+                      <span key={pokemon.name} className="bg-white/10 px-3 py-1 rounded-full">
+                        {pokemon.icon} {pokemon.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {screen === "slots" && (
+              <div className="bg-gradient-to-b from-red-700 to-red-900 p-6 rounded-b-lg">
+                <button
+                  onClick={() => setScreen("casino")}
+                  className="flex items-center gap-2 mb-4 bg-white/20 px-4 py-2 rounded hover:bg-white/30"
+                >
+                  ← Back to Game Floor
+                </button>
+
+                <h2 className="text-3xl font-bold mb-6 text-center">🎰 Slot Machine 🎰</h2>
+
+                <div className="gba-panel slot-cabinet rounded-3xl shadow-2xl mb-6 neon-panel arcade-frame cabinet-border">
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <div className="bg-slate-900/80 text-yellow-300 px-4 py-2 rounded-xl border-2 border-cyan-400 pixel-font text-xs">
+                      {coins} Coins
+                    </div>
+                    <div className="bg-slate-900/80 text-yellow-300 px-4 py-2 rounded-xl border-2 border-cyan-400 pixel-font text-xs">
+                      Menu
+                    </div>
+                  </div>
+
+                  <div className="cabinet-title text-center text-yellow-200 pixel-font text-2xl py-5 mb-6 rounded-2xl">
+                    Pocket<br />Casino
+                  </div>
+
+                  <div className="relative slot-window rounded-2xl p-7 mb-6">
+                    <div className="payline"></div>
+                    <div className="flex justify-center gap-4">
+                      {slots.map((column, columnIndex) => (
+                        <div
+                          key={columnIndex}
+                          className="reel-strip flex flex-col items-center gap-5 rounded-xl bg-white/90 px-4 py-5"
+                        >
+                          {column.map((symbol, rowIndex) => (
+                            <div
+                              key={`${columnIndex}-${rowIndex}`}
+                              className={`slot-reel reel-symbol w-24 h-24 rounded-2xl flex items-center justify-center text-6xl font-bold shadow-lg ${
+                                spinning ? "spin-blur" : ""
+                              } ${rowIndex === 1 ? "bg-yellow-200 text-purple-900" : "bg-white"}`}
+                            >
+                              {symbol}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between px-5 py-3 bg-slate-900/70 rounded-xl border border-white/10 mb-4 text-yellow-300 pixel-font text-xs">
+                    <span>Bet</span>
+                    <span className="text-lg text-yellow-200">{bet}</span>
+                    <span>Bonus x3</span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2 mb-4 text-xs">
+                    {[10, 25, 50, 100].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setBet(amount)}
+                        className={`py-2 rounded arcade-button pixel-font ${
+                          bet === amount
+                            ? "bg-emerald-500 text-slate-900"
+                            : "bg-slate-700 text-white"
+                        }`}
+                      >
+                        {amount}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      className="arcade-button bg-pink-500 text-white py-3 rounded-xl pixel-font text-xs"
+                      onClick={() => setStatusMessage("Payline checked!")}
+                    >
+                      Pay
+                    </button>
+                    <button
+                      className="arcade-button bg-purple-500 text-white py-3 rounded-xl pixel-font text-xs"
+                      onClick={() => setStatusMessage("Hold steady...")}
+                    >
+                      Stop
+                    </button>
+                    <button
+                      onClick={spinSlots}
+                      disabled={spinning || coins < bet}
+                      className={`arcade-button py-3 rounded-xl pixel-font text-xs ${
+                        spinning || coins < bet
+                          ? "bg-slate-600 text-white/60 cursor-not-allowed"
+                          : "bg-emerald-400 text-slate-900 hover:bg-emerald-300"
+                      }`}
+                    >
+                      {spinning ? "Spinning" : "Start"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 mb-4">
+                  <div className="coin-case rounded-2xl px-4 py-3 flex items-center justify-between text-yellow-200 pixel-font text-xs">
+                    <span>Coin Case</span>
+                    <span className="text-lg">{coins}</span>
+                  </div>
+                  <div className="reward-card rounded-2xl px-4 py-3 text-yellow-200 pixel-font text-xs">
+                    <div className="flex items-center justify-between">
+                      <span>Top Rewards</span>
+                      <span>⭐</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-yellow-100">
+                      <span>🎁 Porygon</span>
+                      <span>📀 TM Pack</span>
+                      <span>🐉 Dratini</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 p-4 rounded mb-4">
+                  <h3 className="font-bold mb-2 text-center">Gameplay Loop (Payline)</h3>
+                  <p className="text-sm text-center text-white/80">
+                    {statusMessage}
+                  </p>
+                </div>
+
+                <div className="bg-white/10 p-4 rounded">
+                  <h3 className="font-bold mb-2">Payouts (middle payline):</h3>
+                  <div className="text-sm space-y-1">
+                    <div>7-7-7: {bet * 100} coins</div>
+                    <div>💎-💎-💎: {bet * 50} coins</div>
+                    <div>🔔-🔔-🔔: {bet * 30} coins</div>
+                    <div>⭐-⭐-⭐: {bet * 20} coins</div>
+                    <div>🍒-🍒-🍒: {bet * 15} coins</div>
+                    <div>BAR-BAR-BAR: {bet * 10} coins</div>
+                    <div>🍒-🍒-?: {bet * 5} coins</div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setScreen("prizes")}
+                  className="w-full mt-4 bg-purple-600 py-3 rounded font-bold hover:bg-purple-700"
+                >
+                  🎁 Prize Corner
+                </button>
+              </div>
+            )}
+
+            {screen === "prizes" && (
+              <div className="bg-gradient-to-b from-purple-700 to-purple-900 p-6 rounded-b-lg">
+                <button
+                  onClick={() => setScreen("town")}
+                  className="flex items-center gap-2 mb-4 bg-white/20 px-4 py-2 rounded hover:bg-white/30"
+                >
+                  ← Back to Town
+                </button>
+
+                <h2 className="text-2xl font-bold mb-4 text-center">🏆 Prize Corner 🏆</h2>
+
+                <div className="space-y-3 mb-6">
+                  {prizeList.map((prize, i) => (
+                    <div
+                      key={i}
+                      className="bg-white/10 p-4 rounded-lg flex justify-between items-center"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{prize.icon}</span>
+                        <div>
+                          <div className="font-bold">{prize.name}</div>
+                          <div className="text-sm text-yellow-300">{prize.cost} coins</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => buyPrize(prize)}
+                        disabled={coins < prize.cost}
+                        className={`px-4 py-2 rounded font-bold ${
+                          coins >= prize.cost
+                            ? "bg-green-500 hover:bg-green-600"
+                            : "bg-gray-600 cursor-not-allowed"
+                        }`}
+                      >
+                        Buy
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {prizes.length > 0 && (
+                  <div className="bg-green-900 p-4 rounded-lg">
+                    <h3 className="font-bold mb-2">Your Prizes:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {prizes.map((prize, i) => (
+                        <div key={i} className="bg-white/20 px-3 py-2 rounded text-sm">
+                          {prize.icon} {prize.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setScreen("casino")}
+                  className="w-full mt-4 bg-red-600 py-3 rounded font-bold hover:bg-red-700"
+                >
+                  🎮 Back to Casino
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<PokemonGameCorner />);
+    </script>
+  </body>
+</html>
