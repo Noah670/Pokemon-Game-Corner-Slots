@@ -49,6 +49,9 @@
         border: 4px solid #06b6d4;
         box-shadow: 0 0 18px rgba(6, 182, 212, 0.7);
       }
+      .slot-cabinet {
+        padding: 28px;
+      }
       .synth-grid {
         background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.95));
         border: 1px solid rgba(236, 72, 153, 0.4);
@@ -56,12 +59,22 @@
       .slot-window {
         background: linear-gradient(180deg, #e5f2d5 0%, #f7f7e8 60%, #d5e8c5 100%);
         border: 3px solid #0f172a;
-        box-shadow: inset 0 0 0 4px rgba(15, 23, 42, 0.2);
+        box-shadow: inset 0 0 0 4px rgba(15, 23, 42, 0.2), 0 10px 20px rgba(15, 23, 42, 0.35);
       }
       .cabinet-title {
         background: linear-gradient(180deg, #ff4fd8 0%, #d93b9a 60%, #b12276 100%);
         border: 3px solid #0f172a;
         box-shadow: inset 0 0 0 4px rgba(15, 23, 42, 0.2);
+      }
+      .coin-case {
+        background: linear-gradient(180deg, #0f172a 0%, #1f2a44 100%);
+        border: 2px solid #22d3ee;
+        box-shadow: inset 0 0 12px rgba(34, 211, 238, 0.35);
+      }
+      .reward-card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(88, 28, 135, 0.9));
+        border: 1px solid rgba(250, 204, 21, 0.6);
+        box-shadow: inset 0 0 8px rgba(250, 204, 21, 0.2);
       }
       .arcade-button {
         border: 3px solid #0f172a;
@@ -271,7 +284,7 @@
         }, [location, casinoLocation, screen]);
 
         return (
-          <div className="max-w-md mx-auto">
+          <div className="max-w-lg mx-auto">
             <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-t-lg p-4 shadow-lg">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -428,7 +441,7 @@
 
                 <h2 className="text-3xl font-bold mb-6 text-center">🎰 Slot Machine 🎰</h2>
 
-                <div className="gba-panel p-5 rounded-3xl shadow-2xl mb-6 neon-panel arcade-frame">
+                <div className="gba-panel slot-cabinet rounded-3xl shadow-2xl mb-6 neon-panel arcade-frame">
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <div className="bg-slate-900/80 text-yellow-300 px-4 py-2 rounded-xl border-2 border-cyan-400 pixel-font text-xs">
                       {coins} Coins
@@ -438,22 +451,22 @@
                     </div>
                   </div>
 
-                  <div className="cabinet-title text-center text-yellow-200 pixel-font text-2xl py-4 mb-4 rounded-2xl">
+                  <div className="cabinet-title text-center text-yellow-200 pixel-font text-2xl py-5 mb-5 rounded-2xl">
                     Pocket<br />Casino
                   </div>
 
-                  <div className="relative slot-window rounded-2xl p-5 mb-4">
+                  <div className="relative slot-window rounded-2xl p-6 mb-5">
                     <div className="payline"></div>
                     <div className="flex justify-center gap-4">
                       {slots.map((column, columnIndex) => (
                         <div
                           key={columnIndex}
-                          className="flex flex-col items-center gap-4 rounded-xl bg-white/80 px-3 py-3"
+                          className="flex flex-col items-center gap-5 rounded-xl bg-white/85 px-4 py-4"
                         >
                           {column.map((symbol, rowIndex) => (
                             <div
                               key={`${columnIndex}-${rowIndex}`}
-                              className={`slot-reel w-16 h-16 rounded-lg flex items-center justify-center text-4xl font-bold shadow-lg ${
+                              className={`slot-reel w-20 h-20 rounded-xl flex items-center justify-center text-5xl font-bold shadow-lg ${
                                 spinning ? "spin-blur" : ""
                               } ${rowIndex === 1 ? "bg-yellow-200 text-purple-900" : "bg-white"}`}
                             >
@@ -465,7 +478,7 @@
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between px-4 py-3 bg-slate-900/70 rounded-xl border border-white/10 mb-4 text-yellow-300 pixel-font text-xs">
+                  <div className="flex items-center justify-between px-5 py-3 bg-slate-900/70 rounded-xl border border-white/10 mb-4 text-yellow-300 pixel-font text-xs">
                     <span>Bet</span>
                     <span className="text-lg text-yellow-200">{bet}</span>
                     <span>Bonus x3</span>
@@ -511,6 +524,24 @@
                     >
                       {spinning ? "Spinning" : "Start"}
                     </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 mb-4">
+                  <div className="coin-case rounded-2xl px-4 py-3 flex items-center justify-between text-yellow-200 pixel-font text-xs">
+                    <span>Coin Case</span>
+                    <span className="text-lg">{coins}</span>
+                  </div>
+                  <div className="reward-card rounded-2xl px-4 py-3 text-yellow-200 pixel-font text-xs">
+                    <div className="flex items-center justify-between">
+                      <span>Top Rewards</span>
+                      <span>⭐</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-yellow-100">
+                      <span>🎁 Porygon</span>
+                      <span>📀 TM Pack</span>
+                      <span>🐉 Dratini</span>
+                    </div>
                   </div>
                 </div>
 
