@@ -52,6 +52,10 @@
       .slot-cabinet {
         padding: 28px;
       }
+      .cabinet-border {
+        border: 3px solid rgba(248, 250, 252, 0.2);
+        box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.4);
+      }
       .synth-grid {
         background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.95));
         border: 1px solid rgba(236, 72, 153, 0.4);
@@ -60,6 +64,14 @@
         background: linear-gradient(180deg, #e5f2d5 0%, #f7f7e8 60%, #d5e8c5 100%);
         border: 3px solid #0f172a;
         box-shadow: inset 0 0 0 4px rgba(15, 23, 42, 0.2), 0 10px 20px rgba(15, 23, 42, 0.35);
+      }
+      .reel-strip {
+        border: 2px solid #0f172a;
+        box-shadow: inset 0 0 0 3px rgba(15, 23, 42, 0.15);
+      }
+      .reel-symbol {
+        border: 2px solid rgba(15, 23, 42, 0.2);
+        box-shadow: inset 0 0 10px rgba(15, 23, 42, 0.08);
       }
       .cabinet-title {
         background: linear-gradient(180deg, #ff4fd8 0%, #d93b9a 60%, #b12276 100%);
@@ -89,7 +101,7 @@
       .payline {
         position: absolute;
         inset: 50% 8% auto 8%;
-        height: 4px;
+        height: 6px;
         background: linear-gradient(90deg, transparent, #facc15, transparent);
         box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
         transform: translateY(-50%);
@@ -110,9 +122,9 @@
         const [coins, setCoins] = useState(500);
         const [screen, setScreen] = useState("casino");
         const [slots, setSlots] = useState([
-          ["7", "💎", "BAR"],
-          ["7", "⭐", "🍒"],
-          ["7", "🔔", "BAR"],
+          ["BAR", "7", "7"],
+          ["⭐", "7", "🔔"],
+          ["🍒", "7", "BAR"],
         ]);
         const [spinning, setSpinning] = useState(false);
         const [bet, setBet] = useState(10);
@@ -284,7 +296,7 @@
         }, [location, casinoLocation, screen]);
 
         return (
-          <div className="max-w-lg mx-auto">
+          <div className="max-w-xl mx-auto">
             <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-t-lg p-4 shadow-lg">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -441,7 +453,7 @@
 
                 <h2 className="text-3xl font-bold mb-6 text-center">🎰 Slot Machine 🎰</h2>
 
-                <div className="gba-panel slot-cabinet rounded-3xl shadow-2xl mb-6 neon-panel arcade-frame">
+                <div className="gba-panel slot-cabinet rounded-3xl shadow-2xl mb-6 neon-panel arcade-frame cabinet-border">
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <div className="bg-slate-900/80 text-yellow-300 px-4 py-2 rounded-xl border-2 border-cyan-400 pixel-font text-xs">
                       {coins} Coins
@@ -451,22 +463,22 @@
                     </div>
                   </div>
 
-                  <div className="cabinet-title text-center text-yellow-200 pixel-font text-2xl py-5 mb-5 rounded-2xl">
+                  <div className="cabinet-title text-center text-yellow-200 pixel-font text-2xl py-5 mb-6 rounded-2xl">
                     Pocket<br />Casino
                   </div>
 
-                  <div className="relative slot-window rounded-2xl p-6 mb-5">
+                  <div className="relative slot-window rounded-2xl p-7 mb-6">
                     <div className="payline"></div>
                     <div className="flex justify-center gap-4">
                       {slots.map((column, columnIndex) => (
                         <div
                           key={columnIndex}
-                          className="flex flex-col items-center gap-5 rounded-xl bg-white/85 px-4 py-4"
+                          className="reel-strip flex flex-col items-center gap-5 rounded-xl bg-white/90 px-4 py-5"
                         >
                           {column.map((symbol, rowIndex) => (
                             <div
                               key={`${columnIndex}-${rowIndex}`}
-                              className={`slot-reel w-20 h-20 rounded-xl flex items-center justify-center text-5xl font-bold shadow-lg ${
+                              className={`slot-reel reel-symbol w-24 h-24 rounded-2xl flex items-center justify-center text-6xl font-bold shadow-lg ${
                                 spinning ? "spin-blur" : ""
                               } ${rowIndex === 1 ? "bg-yellow-200 text-purple-900" : "bg-white"}`}
                             >
