@@ -12,6 +12,25 @@
       .slot-reel {
         text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
       }
+      .spin-blur {
+        animation: reel-spin 0.6s linear infinite;
+        filter: blur(1.5px);
+        transform-origin: center;
+      }
+      @keyframes reel-spin {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-12px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+      .neon-panel {
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.45), inset 0 0 8px rgba(0, 0, 0, 0.3);
+      }
     </style>
   </head>
   <body class="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 text-white">
@@ -26,7 +45,7 @@
 
       const PokemonGameCorner = () => {
         const [coins, setCoins] = useState(500);
-        const [screen, setScreen] = useState("town");
+        const [screen, setScreen] = useState("casino");
         const [slots, setSlots] = useState(["7", "7", "7"]);
         const [spinning, setSpinning] = useState(false);
         const [bet, setBet] = useState(10);
@@ -34,6 +53,8 @@
         const [soundOn, setSoundOn] = useState(true);
         const [totalWins, setTotalWins] = useState(0);
         const [location, setLocation] = useState({ x: 5, y: 5 });
+        const [casinoLocation, setCasinoLocation] = useState({ x: 2, y: 4 });
+        const [statusMessage, setStatusMessage] = useState("Place your bet and spin!");
 
         const symbols = ["7", "💎", "🔔", "⭐", "🍒", "BAR"];
         const townMap = [
@@ -69,11 +90,20 @@
           { name: "Squirtle", icon: "💧" },
         ];
 
+        const casinoMap = [
+          ["🪑", "🎰", "🎰", "🎰", "🪑", "🪑", "🪑"],
+          ["🪑", "⬜", "⬜", "⬜", "⬜", "⬜", "🪑"],
+          ["🎰", "⬜", "⬜", "🎰", "⬜", "⬜", "🎰"],
+          ["🪑", "⬜", "⬜", "⬜", "⬜", "⬜", "🪑"],
+          ["🪑", "⬜", "⬜", "🚪", "⬜", "⬜", "🪑"],
+        ];
+
         const spinSlots = () => {
           if (coins < bet || spinning) return;
 
           setCoins((prevCoins) => prevCoins - bet);
           setSpinning(true);
+          setStatusMessage("Spinning...");
 
           const spinDuration = 1800;
           const spinInterval = 100;
@@ -112,6 +142,9 @@
           if (winAmount > 0) {
             setCoins((currentCoins) => currentCoins + winAmount);
             setTotalWins((wins) => wins + 1);
+            setStatusMessage(`You won ${winAmount} coins!`);
+          } else {
+            setStatusMessage("No win this time. Try again!");
           }
         };
 
@@ -138,22 +171,37 @@
           }
         };
 
+        const moveCasinoPlayer = (dx, dy) => {
+          const newX = Math.max(0, Math.min(6, casinoLocation.x + dx));
+          const newY = Math.max(0, Math.min(4, casinoLocation.y + dy));
+
+          const tile = casinoMap[newY][newX];
+          if (tile !== "🪑") {
+            setCasinoLocation({ x: newX, y: newY });
+            if (tile === "🎰") {
+              setScreen("slots");
+            } else if (tile === "🚪") {
+              setScreen("town");
+            }
+          }
+        };
+
         useEffect(() => {
           const handleKeyPress = (event) => {
-            if (screen !== "town") return;
+            if (screen !== "town" && screen !== "casino") return;
 
             switch (event.key) {
               case "ArrowUp":
-                movePlayer(0, -1);
+                screen === "town" ? movePlayer(0, -1) : moveCasinoPlayer(0, -1);
                 break;
               case "ArrowDown":
-                movePlayer(0, 1);
+                screen === "town" ? movePlayer(0, 1) : moveCasinoPlayer(0, 1);
                 break;
               case "ArrowLeft":
-                movePlayer(-1, 0);
+                screen === "town" ? movePlayer(-1, 0) : moveCasinoPlayer(-1, 0);
                 break;
               case "ArrowRight":
-                movePlayer(1, 0);
+                screen === "town" ? movePlayer(1, 0) : moveCasinoPlayer(1, 0);
                 break;
               default:
                 break;
@@ -162,7 +210,7 @@
 
           window.addEventListener("keydown", handleKeyPress);
           return () => window.removeEventListener("keydown", handleKeyPress);
-        }, [location, screen]);
+        }, [location, casinoLocation, screen]);
 
         return (
           <div className="max-w-md mx-auto">
@@ -248,18 +296,87 @@
                   onClick={() => setScreen("town")}
                   className="flex items-center gap-2 mb-4 bg-white/20 px-4 py-2 rounded hover:bg-white/30"
                 >
-                  ← Exit Casino
+                  ← Exit Game Corner
+                </button>
+
+                <h2 className="text-3xl font-bold mb-4 text-center">🎰 Game Corner Floor 🎰</h2>
+                <p className="text-sm text-center text-white/80 mb-4">
+                  Walk to a slot machine 🎰 to play, or head to the door 🚪 to leave.
+                </p>
+
+                <div className="bg-red-950/60 p-4 rounded-lg border border-white/10 mb-4 neon-panel">
+                  {casinoMap.map((row, y) => (
+                    <div key={y} className="flex justify-center">
+                      {row.map((tile, x) => (
+                        <div
+                          key={`${x}-${y}`}
+                          className="w-10 h-10 flex items-center justify-center text-lg"
+                        >
+                          {casinoLocation.x === x && casinoLocation.y === y ? "🧍" : tile}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <button
+                    className="col-start-2 bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(0, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(-1, 0)}
+                  >
+                    ←
+                  </button>
+                  <button
+                    className="bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(0, 1)}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    className="bg-pink-600 p-3 rounded"
+                    onClick={() => moveCasinoPlayer(1, 0)}
+                  >
+                    →
+                  </button>
+                </div>
+
+                <div className="bg-white/10 p-4 rounded">
+                  <h3 className="font-bold mb-2 text-center">Lucky Pokémon Lineup</h3>
+                  <div className="flex flex-wrap justify-center gap-3 text-sm">
+                    {featuredPokemon.map((pokemon) => (
+                      <span key={pokemon.name} className="bg-white/10 px-3 py-1 rounded-full">
+                        {pokemon.icon} {pokemon.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {screen === "slots" && (
+              <div className="bg-gradient-to-b from-red-700 to-red-900 p-6 rounded-b-lg">
+                <button
+                  onClick={() => setScreen("casino")}
+                  className="flex items-center gap-2 mb-4 bg-white/20 px-4 py-2 rounded hover:bg-white/30"
+                >
+                  ← Back to Game Floor
                 </button>
 
                 <h2 className="text-3xl font-bold mb-6 text-center">🎰 Slot Machine 🎰</h2>
 
-                <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 p-6 rounded-lg shadow-2xl mb-6">
+                <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 p-6 rounded-lg shadow-2xl mb-6 neon-panel">
                   <div className="flex justify-center gap-4 mb-6">
                     {slots.map((symbol, i) => (
                       <div
                         key={i}
                         className={`slot-reel w-24 h-24 bg-white rounded-lg flex items-center justify-center text-5xl font-bold shadow-lg ${
-                          spinning ? "animate-pulse" : ""
+                          spinning ? "spin-blur" : ""
                         }`}
                       >
                         {symbol}
@@ -294,6 +411,13 @@
                   </button>
                 </div>
 
+                <div className="bg-white/10 p-4 rounded mb-4">
+                  <h3 className="font-bold mb-2 text-center">Gameplay Loop</h3>
+                  <p className="text-sm text-center text-white/80">
+                    {statusMessage}
+                  </p>
+                </div>
+
                 <div className="bg-white/10 p-4 rounded">
                   <h3 className="font-bold mb-2">Payouts:</h3>
                   <div className="text-sm space-y-1">
@@ -304,17 +428,6 @@
                     <div>🍒-🍒-🍒: {bet * 15} coins</div>
                     <div>BAR-BAR-BAR: {bet * 10} coins</div>
                     <div>🍒-🍒-?: {bet * 5} coins</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 bg-white/10 p-4 rounded">
-                  <h3 className="font-bold mb-2 text-center">Lucky Pokémon Lineup</h3>
-                  <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {featuredPokemon.map((pokemon) => (
-                      <span key={pokemon.name} className="bg-white/10 px-3 py-1 rounded-full">
-                        {pokemon.icon} {pokemon.name}
-                      </span>
-                    ))}
                   </div>
                 </div>
 
