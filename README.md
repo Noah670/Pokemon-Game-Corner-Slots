@@ -1,5 +1,7 @@
 # Pokemon-Game-Corner-Slots
-Pokemon Game Corner slots game 
+
+Play now!
+[Pokemon Game Corner](https://noah670.github.io/Pokemon-Game-Corner-Slots/).
 
 # 🎰 Pokémon Game Corner Mobile
 
