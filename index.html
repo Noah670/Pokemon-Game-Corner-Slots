@@ -106,6 +106,44 @@
         box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
         transform: translateY(-50%);
       }
+      .payline-grid {
+        position: absolute;
+        inset: 10% 8%;
+        pointer-events: none;
+      }
+      .payline-row {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.85), transparent);
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+      }
+      .payline-row.top {
+        top: 12%;
+      }
+      .payline-row.mid {
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .payline-row.bottom {
+        bottom: 12%;
+      }
+      .payline-diagonal {
+        position: absolute;
+        left: 6%;
+        right: 6%;
+        top: 6%;
+        bottom: 6%;
+        border-top: 6px solid rgba(250, 204, 21, 0.85);
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+      }
+      .payline-diagonal.down {
+        transform: skewY(8deg);
+      }
+      .payline-diagonal.up {
+        transform: skewY(-8deg);
+      }
     </style>
   </head>
   <body class="min-h-screen bg-gradient-to-b from-blue-900 to-purple-900 text-white">
@@ -127,7 +165,7 @@
           ["🍒", "7", "BAR"],
         ]);
         const [spinning, setSpinning] = useState(false);
-        const [bet, setBet] = useState(10);
+        const [bet, setBet] = useState(1);
         const [prizes, setPrizes] = useState([]);
         const [soundOn, setSoundOn] = useState(true);
         const [totalWins, setTotalWins] = useState(0);
@@ -136,6 +174,14 @@
         const [statusMessage, setStatusMessage] = useState("Place your bet and spin!");
 
         const symbols = ["7", "💎", "🔔", "⭐", "🍒", "BAR"];
+        const payoutTable = {
+          "7": 300,
+          "💎": 100,
+          "🔔": 15,
+          "⭐": 15,
+          "🍒": 15,
+          "BAR": 8,
+        };
         const townMap = [
           ["🌳", "🌳", "🏠", "🌳", "🌳", "🌳", "🏠", "🌳", "🌳", "🌳"],
           ["🌳", "⬜", "⬜", "⬜", "🌳", "⬜", "⬜", "⬜", "🌳", "🌳"],
@@ -207,27 +253,45 @@
           }, spinInterval);
         };
 
+        const getPaylines = (grid, wager) => {
+          const lines = [
+            [grid[0][1], grid[1][1], grid[2][1]], // middle
+          ];
+          if (wager >= 2) {
+            lines.push(
+              [grid[0][0], grid[1][0], grid[2][0]], // top
+              [grid[0][2], grid[1][2], grid[2][2]] // bottom
+            );
+          }
+          if (wager >= 3) {
+            lines.push(
+              [grid[0][0], grid[1][1], grid[2][2]], // diagonal down
+              [grid[0][2], grid[1][1], grid[2][0]] // diagonal up
+            );
+          }
+          return lines;
+        };
+
         const checkWin = (result) => {
           let winAmount = 0;
-          const payline = result.map((column) => column[1]);
+          let winningLines = 0;
+          const paylines = getPaylines(result, bet);
 
-          if (payline[0] === payline[1] && payline[1] === payline[2]) {
-            if (payline[0] === "7") winAmount = bet * 100;
-            else if (payline[0] === "💎") winAmount = bet * 50;
-            else if (payline[0] === "🔔") winAmount = bet * 30;
-            else if (payline[0] === "⭐") winAmount = bet * 20;
-            else if (payline[0] === "🍒") winAmount = bet * 15;
-            else if (payline[0] === "BAR") winAmount = bet * 10;
-          } else if (payline.filter((s) => s === "🍒").length === 2) {
-            winAmount = bet * 5;
-          }
+          paylines.forEach((line) => {
+            if (line[0] === line[1] && line[1] === line[2]) {
+              winAmount += payoutTable[line[0]] || 0;
+              winningLines += 1;
+            }
+          });
 
           if (winAmount > 0) {
             setCoins((currentCoins) => currentCoins + winAmount);
             setTotalWins((wins) => wins + 1);
-            setStatusMessage(`Payline win! You earned ${winAmount} coins.`);
+            setStatusMessage(
+              `Win! ${winningLines} line${winningLines === 1 ? "" : "s"} paid ${winAmount} coins.`
+            );
           } else {
-            setStatusMessage("No payline win. Shift your luck and spin again!");
+            setStatusMessage("No win this time. Try another spin!");
           }
         };
 
@@ -468,7 +532,13 @@
                   </div>
 
                   <div className="relative slot-window rounded-2xl p-7 mb-6">
-                    <div className="payline"></div>
+                    <div className="payline-grid">
+                      <div className="payline-row mid"></div>
+                      {bet >= 2 && <div className="payline-row top"></div>}
+                      {bet >= 2 && <div className="payline-row bottom"></div>}
+                      {bet >= 3 && <div className="payline-diagonal down"></div>}
+                      {bet >= 3 && <div className="payline-diagonal up"></div>}
+                    </div>
                     <div className="flex justify-center gap-4">
                       {slots.map((column, columnIndex) => (
                         <div
@@ -493,11 +563,11 @@
                   <div className="flex items-center justify-between px-5 py-3 bg-slate-900/70 rounded-xl border border-white/10 mb-4 text-yellow-300 pixel-font text-xs">
                     <span>Bet</span>
                     <span className="text-lg text-yellow-200">{bet}</span>
-                    <span>Bonus x3</span>
+                    <span>Lines</span>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2 mb-4 text-xs">
-                    {[10, 25, 50, 100].map((amount) => (
+                  <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
+                    {[1, 2, 3].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setBet(amount)}
@@ -558,22 +628,21 @@
                 </div>
 
                 <div className="bg-white/10 p-4 rounded mb-4">
-                  <h3 className="font-bold mb-2 text-center">Gameplay Loop (Payline)</h3>
+                  <h3 className="font-bold mb-2 text-center">Gameplay Loop</h3>
                   <p className="text-sm text-center text-white/80">
                     {statusMessage}
                   </p>
                 </div>
 
                 <div className="bg-white/10 p-4 rounded">
-                  <h3 className="font-bold mb-2">Payouts (middle payline):</h3>
+                  <h3 className="font-bold mb-2">Payouts (per line):</h3>
                   <div className="text-sm space-y-1">
-                    <div>7-7-7: {bet * 100} coins</div>
-                    <div>💎-💎-💎: {bet * 50} coins</div>
-                    <div>🔔-🔔-🔔: {bet * 30} coins</div>
-                    <div>⭐-⭐-⭐: {bet * 20} coins</div>
-                    <div>🍒-🍒-🍒: {bet * 15} coins</div>
-                    <div>BAR-BAR-BAR: {bet * 10} coins</div>
-                    <div>🍒-🍒-?: {bet * 5} coins</div>
+                    <div>7-7-7: {payoutTable["7"]} coins</div>
+                    <div>💎-💎-💎: {payoutTable["💎"]} coins</div>
+                    <div>🔔-🔔-🔔: {payoutTable["🔔"]} coins</div>
+                    <div>⭐-⭐-⭐: {payoutTable["⭐"]} coins</div>
+                    <div>🍒-🍒-🍒: {payoutTable["🍒"]} coins</div>
+                    <div>BAR-BAR-BAR: {payoutTable["BAR"]} coins</div>
                   </div>
                 </div>
 
