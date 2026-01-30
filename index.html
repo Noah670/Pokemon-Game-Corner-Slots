@@ -35,11 +35,37 @@
         const [showCombo, setShowCombo] = useState(false);
         const [bonusMode, setBonusMode] = useState(false);
         const [particles, setParticles] = useState([]);
+        const [showShop, setShowShop] = useState(false);
+        const [showCoinCase, setShowCoinCase] = useState(false);
+        const [coinCase, setCoinCase] = useState([]);
+        const [selectedItem, setSelectedItem] = useState(null);
+        const [viewMode, setViewMode] = useState("slots"); // "slots" or "explore"
+        const [playerPos, setPlayerPos] = useState({ x: 5, y: 5 });
+        const [playerDir, setPlayerDir] = useState("down"); // "up", "down", "left", "right"
+        const [nearShop, setNearShop] = useState(false);
+        const [nearSlots, setNearSlots] = useState(false);
+        const [nearCoinCase, setNearCoinCase] = useState(false);
+        const keysPressed = useRef({});
 
         const audioCtx = useRef(null);
         const musicTimer = useRef(null);
         const symbols = ["7", "💎", "🔔", "⭐", "🍒", "BAR"];
         const pays = { "7": 100, "💎": 50, "🔔": 10, "⭐": 10, "🍒": 10, "BAR": 5 };
+        
+        const shopItems = [
+          { id: "medal-boulder", name: "Boulder Badge", emoji: "🏔️", price: 50, type: "medal", description: "A badge earned from Pewter City Gym" },
+          { id: "medal-cascade", name: "Cascade Badge", emoji: "💧", price: 50, type: "medal", description: "A badge earned from Cerulean City Gym" },
+          { id: "medal-thunder", name: "Thunder Badge", emoji: "⚡", price: 50, type: "medal", description: "A badge earned from Vermilion City Gym" },
+          { id: "medal-rainbow", name: "Rainbow Badge", emoji: "🌈", price: 100, type: "medal", description: "A badge earned from Celadon City Gym" },
+          { id: "medal-soul", name: "Soul Badge", emoji: "💜", price: 75, type: "medal", description: "A badge earned from Fuchsia City Gym" },
+          { id: "medal-marsh", name: "Marsh Badge", emoji: "🌿", price: 75, type: "medal", description: "A badge earned from Saffron City Gym" },
+          { id: "medal-volcano", name: "Volcano Badge", emoji: "🌋", price: 100, type: "medal", description: "A badge earned from Cinnabar Island Gym" },
+          { id: "medal-earth", name: "Earth Badge", emoji: "⛰️", price: 100, type: "medal", description: "A badge earned from Viridian City Gym" },
+          { id: "pokeball", name: "Poké Ball", emoji: "⚪", price: 200, type: "pokeball", description: "A standard Poké Ball for catching Pokémon" },
+          { id: "greatball", name: "Great Ball", emoji: "🔵", price: 600, type: "pokeball", description: "A better Poké Ball with higher catch rate" },
+          { id: "ultraball", name: "Ultra Ball", emoji: "🟡", price: 1200, type: "pokeball", description: "A superior Poké Ball with very high catch rate" },
+          { id: "masterball", name: "Master Ball", emoji: "🟣", price: 5000, type: "pokeball", description: "The ultimate Poké Ball that never fails" },
+        ];
 
         const playMusic = () => {
           if (!musicOn || !audioCtx.current) return;
@@ -98,6 +124,107 @@
           }
           return () => musicTimer.current && clearInterval(musicTimer.current);
         }, [musicOn]);
+
+        // Keyboard controls for 2D exploration
+        useEffect(() => {
+          if (viewMode !== "explore") return;
+
+          const handleKeyDown = (e) => {
+            keysPressed.current[e.key.toLowerCase()] = true;
+            const speed = 0.5;
+            let newX = playerPos.x;
+            let newY = playerPos.y;
+            let newDir = playerDir;
+
+            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+              newY = Math.max(0, playerPos.y - speed);
+              newDir = "up";
+            } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+              newY = Math.min(14, playerPos.y + speed);
+              newDir = "down";
+            } else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+              newX = Math.max(0, playerPos.x - speed);
+              newDir = "left";
+            } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+              newX = Math.min(19, playerPos.x + speed);
+              newDir = "right";
+            } else if (e.key === " " || e.key === "Enter") {
+              if (nearShop) {
+                sound("button");
+                setShowShop(true);
+              } else if (nearSlots) {
+                sound("button");
+                setViewMode("slots");
+              } else if (nearCoinCase) {
+                sound("button");
+                setShowCoinCase(true);
+              }
+            }
+
+            if (newX !== playerPos.x || newY !== playerPos.y) {
+              sound("button", 0.5);
+              setPlayerPos({ x: newX, y: newY });
+              setPlayerDir(newDir);
+            }
+          };
+
+          const handleKeyUp = (e) => {
+            keysPressed.current[e.key.toLowerCase()] = false;
+          };
+
+          window.addEventListener("keydown", handleKeyDown);
+          window.addEventListener("keyup", handleKeyUp);
+
+          // Continuous movement
+          const moveInterval = setInterval(() => {
+            if (viewMode !== "explore") return;
+            const speed = 0.3;
+            let newX = playerPos.x;
+            let newY = playerPos.y;
+            let newDir = playerDir;
+
+            if (keysPressed.current["arrowup"] || keysPressed.current["w"]) {
+              newY = Math.max(0, playerPos.y - speed);
+              newDir = "up";
+            } else if (keysPressed.current["arrowdown"] || keysPressed.current["s"]) {
+              newY = Math.min(14, playerPos.y + speed);
+              newDir = "down";
+            } else if (keysPressed.current["arrowleft"] || keysPressed.current["a"]) {
+              newX = Math.max(0, playerPos.x - speed);
+              newDir = "left";
+            } else if (keysPressed.current["arrowright"] || keysPressed.current["d"]) {
+              newX = Math.min(19, playerPos.x + speed);
+              newDir = "right";
+            }
+
+            if (newX !== playerPos.x || newY !== playerPos.y) {
+              setPlayerPos({ x: newX, y: newY });
+              setPlayerDir(newDir);
+            }
+          }, 50);
+
+          return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+            clearInterval(moveInterval);
+          };
+        }, [viewMode, playerPos, playerDir, nearShop, nearSlots, nearCoinCase]);
+
+        // Check proximity to interactive objects
+        useEffect(() => {
+          if (viewMode !== "explore") return;
+          const shopX = 3, shopY = 2;
+          const slotsX = 16, slotsY = 2;
+          const coinCaseX = 3, coinCaseY = 12;
+
+          const distToShop = Math.sqrt(Math.pow(playerPos.x - shopX, 2) + Math.pow(playerPos.y - shopY, 2));
+          const distToSlots = Math.sqrt(Math.pow(playerPos.x - slotsX, 2) + Math.pow(playerPos.y - slotsY, 2));
+          const distToCoinCase = Math.sqrt(Math.pow(playerPos.x - coinCaseX, 2) + Math.pow(playerPos.y - coinCaseY, 2));
+
+          setNearShop(distToShop < 2);
+          setNearSlots(distToSlots < 2);
+          setNearCoinCase(distToCoinCase < 2);
+        }, [viewMode, playerPos]);
 
         const sound = (type, pitch = 1) => {
           if (!soundOn) return;
@@ -175,6 +302,24 @@
               }, 100);
             }, delay);
           });
+        };
+
+        const buyItem = (item) => {
+          if (balance < item.price) {
+            sound("button");
+            setMsg(`Not enough coins! Need $${item.price.toFixed(2)}`);
+            return;
+          }
+          if (coinCase.find((i) => i.id === item.id)) {
+            sound("button");
+            setMsg("You already own this item!");
+            return;
+          }
+          sound("coin");
+          setBalance((b) => parseFloat((b - item.price).toFixed(2)));
+          setCoinCase((prev) => [...prev, { ...item, purchasedAt: Date.now() }]);
+          setMsg(`Purchased ${item.name}! Check your Coin Case!`);
+          addParticles(5);
         };
 
         const checkWin = (r) => {
@@ -271,33 +416,247 @@
           );
         };
 
+        const ExploreView = () => {
+          const tileSize = 32;
+          const mapWidth = 20;
+          const mapHeight = 15;
+
+          const getTileType = (x, y) => {
+            // Walls
+            if (x === 0 || x === mapWidth - 1 || y === 0 || y === mapHeight - 1) return "wall";
+            // Shop area (top left)
+            if (x >= 1 && x <= 5 && y >= 1 && y <= 4) return "shop";
+            // Slots area (top right)
+            if (x >= 14 && x <= 18 && y >= 1 && y <= 4) return "slots";
+            // Coin case area (bottom left)
+            if (x >= 1 && x <= 5 && y >= 11 && y <= 13) return "coinCase";
+            // Default floor
+            return "floor";
+          };
+
+          const getTileColor = (type, x, y) => {
+            switch (type) {
+              case "wall": 
+                return (x + y) % 2 === 0 ? "#374151" : "#4b5563";
+              case "shop": 
+                return (x + y) % 2 === 0 ? "#f59e0b" : "#d97706";
+              case "slots": 
+                return (x + y) % 2 === 0 ? "#ec4899" : "#db2777";
+              case "coinCase": 
+                return (x + y) % 2 === 0 ? "#8b5cf6" : "#7c3aed";
+              default: 
+                return (x + y) % 2 === 0 ? "#f3f4f6" : "#e5e7eb";
+            }
+          };
+
+          const getTilePattern = (type) => {
+            switch (type) {
+              case "wall": return "█";
+              case "shop": return "🛒";
+              case "slots": return "🎰";
+              case "coinCase": return "💼";
+              default: return "";
+            }
+          };
+
+          return (
+            <div className="fixed inset-0 bg-gradient-to-b from-slate-900 via-indigo-900 to-purple-900 z-20 flex items-center justify-center p-4">
+              <div className="bg-slate-800 rounded-2xl border-4 border-slate-600 shadow-2xl p-4 gba" style={{ maxWidth: "800px", width: "100%" }}>
+                <div className="mb-4 flex justify-between items-center">
+                  <div className="bg-slate-950/80 px-4 py-2 rounded-lg border-2 border-green-500">
+                    <div className="text-xs text-green-400 font-bold">COINS</div>
+                    <div className="text-xl font-bold text-green-300 money">${balance.toFixed(2)}</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sound("button");
+                      setViewMode("slots");
+                    }}
+                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg border-2 border-red-800 text-white font-bold btn"
+                  >
+                    EXIT
+                  </button>
+                </div>
+
+                <div
+                  className="relative mx-auto gba-map"
+                  style={{
+                    width: `${mapWidth * tileSize}px`,
+                    height: `${mapHeight * tileSize}px`,
+                    background: "#cbd5e1",
+                    border: "4px solid #1e293b",
+                    boxShadow: "inset 0 0 0 2px rgba(0,0,0,.3),0 10px 20px rgba(0,0,0,.5)",
+                    imageRendering: "pixelated",
+                  }}
+                >
+                  {/* Render tiles */}
+                  {Array.from({ length: mapHeight }).map((_, row) =>
+                    Array.from({ length: mapWidth }).map((_, col) => {
+                      const tileType = getTileType(col, row);
+                      const color = getTileColor(tileType, col, row);
+                      return (
+                        <div
+                          key={`${col}-${row}`}
+                          className="absolute"
+                          style={{
+                            left: `${col * tileSize}px`,
+                            top: `${row * tileSize}px`,
+                            width: `${tileSize}px`,
+                            height: `${tileSize}px`,
+                            background: color,
+                            border: tileType === "wall" ? "2px solid #1f2937" : "1px solid rgba(0,0,0,.2)",
+                            boxShadow: tileType === "wall" 
+                              ? "inset 0 0 0 1px rgba(0,0,0,.3), inset 0 2px 0 rgba(255,255,255,.1)"
+                              : tileType !== "floor"
+                              ? "inset 0 0 0 1px rgba(255,255,255,.2), inset 0 -2px 0 rgba(0,0,0,.2)"
+                              : "inset 0 0 0 1px rgba(0,0,0,.05)",
+                            backgroundImage: tileType === "floor" 
+                              ? "repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,.03) 4px, rgba(0,0,0,.03) 8px)"
+                              : "none",
+                          }}
+                        >
+                          {tileType !== "floor" && tileType !== "wall" && (
+                            <div 
+                              className="absolute inset-0 flex items-center justify-center text-xl opacity-70"
+                              style={{ 
+                                textShadow: "2px 2px 4px rgba(0,0,0,.8)",
+                                filter: "drop-shadow(0 0 4px rgba(255,255,255,.3))"
+                              }}
+                            >
+                              {getTilePattern(tileType)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {/* Player */}
+                  <div
+                    className="absolute z-30 player-sprite transition-all duration-100"
+                    style={{
+                      left: `${playerPos.x * tileSize}px`,
+                      top: `${playerPos.y * tileSize}px`,
+                      width: `${tileSize}px`,
+                      height: `${tileSize}px`,
+                    }}
+                  >
+                    <div
+                      className="w-full h-full relative"
+                      style={{
+                        transform: `scale(0.9)`,
+                      }}
+                    >
+                      {/* Player body - GBA style */}
+                      <div
+                        className="absolute"
+                        style={{
+                          left: "20%",
+                          top: "20%",
+                          width: "60%",
+                          height: "60%",
+                          background: playerDir === "down" ? "#3b82f6" : playerDir === "up" ? "#2563eb" : "#1d4ed8",
+                          border: "2px solid #1e40af",
+                          boxShadow: "inset 0 2px 0 rgba(255,255,255,.4), inset 0 -2px 0 rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.6)",
+                        }}
+                      >
+                        {/* Face direction indicator */}
+                        <div
+                          className="absolute bg-blue-300"
+                          style={{
+                            width: "30%",
+                            height: "30%",
+                            left: playerDir === "left" ? "0%" : playerDir === "right" ? "70%" : "35%",
+                            top: playerDir === "up" ? "0%" : playerDir === "down" ? "70%" : "35%",
+                            border: "1px solid #1e40af",
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,.5)",
+                          }}
+                        ></div>
+                      </div>
+                      {/* Shadow */}
+                      <div
+                        className="absolute"
+                        style={{
+                          left: "10%",
+                          top: "85%",
+                          width: "80%",
+                          height: "15%",
+                          background: "rgba(0,0,0,.3)",
+                          borderRadius: "50%",
+                          filter: "blur(2px)",
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Interaction prompts */}
+                  {nearShop && (
+                    <div className="absolute z-40 bg-yellow-500 text-black px-3 py-1 rounded border-2 border-yellow-700 font-bold text-xs"
+                      style={{ left: `${playerPos.x * tileSize}px`, top: `${(playerPos.y - 1.5) * tileSize}px`, transform: "translateX(-50%)" }}>
+                      PRESS SPACE TO SHOP
+                    </div>
+                  )}
+                  {nearSlots && (
+                    <div className="absolute z-40 bg-pink-500 text-white px-3 py-1 rounded border-2 border-pink-700 font-bold text-xs"
+                      style={{ left: `${playerPos.x * tileSize}px`, top: `${(playerPos.y - 1.5) * tileSize}px`, transform: "translateX(-50%)" }}>
+                      PRESS SPACE FOR SLOTS
+                    </div>
+                  )}
+                  {nearCoinCase && (
+                    <div className="absolute z-40 bg-purple-500 text-white px-3 py-1 rounded border-2 border-purple-700 font-bold text-xs"
+                      style={{ left: `${playerPos.x * tileSize}px`, top: `${(playerPos.y - 1.5) * tileSize}px`, transform: "translateX(-50%)" }}>
+                      PRESS SPACE FOR COIN CASE
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 bg-slate-950/80 p-3 rounded-lg border-2 border-slate-600">
+                  <div className="text-xs text-slate-300 text-center">
+                    <div className="font-bold mb-1">CONTROLS</div>
+                    <div>Arrow Keys / WASD: Move | Space: Interact</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
         return (
           <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-purple-950 p-2 sm:p-4 relative overflow-hidden">
+            {viewMode === "explore" && <ExploreView />}
             <style>{`
+              *{image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges}
               .reel-spin{animation:spin .075s linear infinite;filter:blur(2.5px) brightness(.95)}
               @keyframes spin{0%{transform:translateY(0)}100%{transform:translateY(-100%)}}
               .balance-flash{animation:flash .6s ease-out}
               @keyframes flash{0%,100%{transform:scale(1)}50%{transform:scale(1.15);filter:brightness(1.5) drop-shadow(0 0 20px gold)}}
               .win-pulse{animation:pulse .7s ease-in-out infinite}
               @keyframes pulse{0%,100%{transform:scale(1);filter:brightness(1) drop-shadow(0 0 5px gold)}50%{transform:scale(1.12);filter:brightness(1.5) drop-shadow(0 0 20px gold)}}
-              .crt::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0,rgba(0,0,0,.08) 1px,transparent 1px,transparent 2.5px);pointer-events:none;z-index:10}
-              .crt::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.2) 100%);pointer-events:none;z-index:11}
-              .gba::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0,rgba(0,0,0,.06) 1.5px,transparent 1.5px,transparent 3.5px);pointer-events:none;z-index:10;opacity:.5}
-              .gba::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.25) 100%);pointer-events:none;z-index:11}
-              .btn{box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.25),0 7px 0 #1f2937,0 9px 15px rgba(0,0,0,.5)}
-              .btn:active:not(:disabled){transform:translateY(5px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.25),0 2px 0 #1f2937}
-              .lcd{text-shadow:0 0 10px rgba(34,211,238,.9),0 0 20px rgba(34,211,238,.5)}
-              .money{text-shadow:0 0 10px rgba(34,197,94,.8),0 0 20px rgba(34,197,94,.5),2px 2px 4px rgba(0,0,0,.8)}
+              .crt::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.1) 0,rgba(0,0,0,.1) 2px,transparent 2px,transparent 3px);pointer-events:none;z-index:10}
+              .crt::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.3) 100%);pointer-events:none;z-index:11}
+              .gba::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0,rgba(0,0,0,.08) 2px,transparent 2px,transparent 4px);pointer-events:none;z-index:10;opacity:.6}
+              .gba::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.3) 100%);pointer-events:none;z-index:11}
+              .gba-item::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.05) 0,rgba(0,0,0,.05) 1px,transparent 1px,transparent 2px);pointer-events:none;z-index:10;opacity:.4}
+              .btn{box-shadow:inset 0 3px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.3),0 8px 0 #1f2937,0 10px 20px rgba(0,0,0,.6);transition:all .1s}
+              .btn:active:not(:disabled){transform:translateY(6px);box-shadow:inset 0 3px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.3),0 2px 0 #1f2937}
+              .lcd{text-shadow:0 0 12px rgba(34,211,238,1),0 0 24px rgba(34,211,238,.6),2px 2px 4px rgba(0,0,0,.9)}
+              .money{text-shadow:0 0 12px rgba(34,197,94,1),0 0 24px rgba(34,197,94,.6),3px 3px 6px rgba(0,0,0,.9)}
               .pulse-b{animation:pb 3s ease-in-out infinite}
-              @keyframes pb{0%,100%{border-color:rgba(6,182,212,.7);box-shadow:0 0 25px rgba(6,182,212,.5)}50%{border-color:rgba(147,51,234,.9);box-shadow:0 0 35px rgba(147,51,234,.7)}}
+              @keyframes pb{0%,100%{border-color:rgba(6,182,212,.8);box-shadow:0 0 30px rgba(6,182,212,.6)}50%{border-color:rgba(147,51,234,1);box-shadow:0 0 40px rgba(147,51,234,.8)}}
               .bonus-glow{animation:bonus 1s ease-in-out infinite}
-              @keyframes bonus{0%,100%{box-shadow:0 0 20px rgba(255,215,0,.8),inset 0 0 20px rgba(255,215,0,.3)}50%{box-shadow:0 0 40px rgba(255,215,0,1),inset 0 0 30px rgba(255,215,0,.5)}}
+              @keyframes bonus{0%,100%{box-shadow:0 0 25px rgba(255,215,0,.9),inset 0 0 25px rgba(255,215,0,.4)}50%{box-shadow:0 0 50px rgba(255,215,0,1),inset 0 0 35px rgba(255,215,0,.6)}}
               .particle{animation:fall 2s ease-out forwards}
               @keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(300px) rotate(360deg);opacity:0}}
               .combo-pop{animation:pop .5s ease-out}
               @keyframes pop{0%{transform:scale(0) rotate(-180deg)}50%{transform:scale(1.2) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
-              .grid{background:linear-gradient(0deg,transparent 24%,rgba(147,51,234,.3) 25%,rgba(147,51,234,.3) 26%,transparent 27%,transparent 74%,rgba(147,51,234,.3) 75%,rgba(147,51,234,.3) 76%,transparent 77%),linear-gradient(90deg,transparent 24%,rgba(147,51,234,.3) 25%,rgba(147,51,234,.3) 26%,transparent 27%,transparent 74%,rgba(147,51,234,.3) 75%,rgba(147,51,234,.3) 76%,transparent 77%);background-size:50px 50px;opacity:.2;animation:grid-move 20s linear infinite}
-              @keyframes grid-move{0%{background-position:0 0}100%{background-position:50px 50px}}
+              .grid{background:linear-gradient(0deg,transparent 24%,rgba(147,51,234,.4) 25%,rgba(147,51,234,.4) 26%,transparent 27%,transparent 74%,rgba(147,51,234,.4) 75%,rgba(147,51,234,.4) 76%,transparent 77%),linear-gradient(90deg,transparent 24%,rgba(147,51,234,.4) 25%,rgba(147,51,234,.4) 26%,transparent 27%,transparent 74%,rgba(147,51,234,.4) 75%,rgba(147,51,234,.4) 76%,transparent 77%);background-size:60px 60px;opacity:.25;animation:grid-move 25s linear infinite}
+              @keyframes grid-move{0%{background-position:0 0}100%{background-position:60px 60px}}
+              @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+              .animate-bounce{animation:bounce 1s ease-in-out infinite}
+              .gba-map{image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges}
+              .player-sprite{image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;filter:drop-shadow(2px 2px 4px rgba(0,0,0,.8))}
+              @keyframes walk{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+              .walking{animation:walk .3s ease-in-out infinite}
             `}</style>
 
             <div className="fixed inset-0 grid pointer-events-none"></div>
@@ -345,6 +704,15 @@
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        sound("button");
+                        setViewMode("explore");
+                      }}
+                      className="bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg shadow-lg border-2 border-blue-800 transition font-bold text-white btn text-xs sm:text-sm"
+                    >
+                      🗺️ EXPLORE
+                    </button>
                     <button
                       onClick={() => {
                         sound("button");
@@ -500,9 +868,233 @@
                       ))}
                     </div>
                   </div>
+
+                  <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-2 sm:gap-3">
+                    <button
+                      onClick={() => {
+                        sound("button");
+                        setShowShop(true);
+                      }}
+                      className="bg-gradient-to-b from-blue-500 via-blue-600 to-blue-800 p-3 sm:p-4 rounded-lg sm:rounded-xl border-4 border-gray-900 font-bold text-white btn shadow-xl relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
+                      <div className="relative z-10">
+                        <div className="text-2xl sm:text-3xl mb-1">🛒</div>
+                        <div className="text-xs sm:text-sm">SHOP</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        sound("button");
+                        setShowCoinCase(true);
+                      }}
+                      className="bg-gradient-to-b from-amber-500 via-amber-600 to-amber-800 p-3 sm:p-4 rounded-lg sm:rounded-xl border-4 border-gray-900 font-bold text-white btn shadow-xl relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
+                      <div className="relative z-10">
+                        <div className="text-2xl sm:text-3xl mb-1">💼</div>
+                        <div className="text-xs sm:text-sm">COIN CASE</div>
+                        {coinCase.length > 0 && (
+                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold border-2 border-white">
+                            {coinCase.length}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Shop Modal */}
+            {showShop && (
+              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowShop(false)}>
+                <div
+                  className="bg-gradient-to-b from-slate-900 via-indigo-900 to-purple-900 rounded-2xl sm:rounded-3xl border-4 border-purple-600 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto gba"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: "linear-gradient(180deg,#1e293b 0%,#312e81 50%,#581c87 100%)",
+                    boxShadow: "inset 0 0 0 4px rgba(147,51,234,.4),inset 0 3px 10px rgba(0,0,0,.5),0 20px 40px rgba(0,0,0,.8)",
+                  }}
+                >
+                  <div className="p-4 sm:p-6">
+                    <div className="flex justify-between items-center mb-4 sm:mb-6">
+                      <h2 className="text-xl sm:text-3xl font-bold text-yellow-300 lcd">🛒 GAME CORNER SHOP</h2>
+                      <button
+                        onClick={() => {
+                          sound("button");
+                          setShowShop(false);
+                        }}
+                        className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg border-2 border-red-800 text-white font-bold btn text-sm sm:text-base"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="mb-4 bg-slate-950/80 p-3 rounded-lg border-2 border-green-500">
+                      <div className="text-center">
+                        <span className="text-xs sm:text-sm text-green-400 font-bold">YOUR COINS</span>
+                        <div className="text-2xl sm:text-4xl font-bold text-green-300 money">${balance.toFixed(2)}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {shopItems.map((item) => {
+                        const owned = coinCase.find((i) => i.id === item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            className={`bg-gradient-to-b from-slate-800 to-slate-900 rounded-xl border-4 ${
+                              owned ? "border-gray-600 opacity-60" : "border-amber-500"
+                            } p-4 shadow-lg gba-item relative overflow-hidden`}
+                            style={{
+                              boxShadow: owned
+                                ? "inset 0 0 0 2px rgba(107,114,128,.4)"
+                                : "inset 0 0 0 2px rgba(245,158,11,.4),0 8px 16px rgba(0,0,0,.5)",
+                            }}
+                          >
+                            <div className="text-center mb-3">
+                              <div className="text-5xl sm:text-6xl mb-2 filter drop-shadow-lg" style={{ filter: "drop-shadow(4px 4px 8px rgba(0,0,0,.8))" }}>
+                                {item.emoji}
+                              </div>
+                              <h3 className="text-sm sm:text-base font-bold text-white mb-1">{item.name}</h3>
+                              <p className="text-[10px] sm:text-xs text-gray-300 mb-3">{item.description}</p>
+                              <div className="flex items-center justify-center gap-2 mb-3">
+                                <span className="text-yellow-300 font-bold text-lg sm:text-xl">${item.price}</span>
+                                {item.type === "medal" && <span className="text-xs bg-purple-600 px-2 py-1 rounded">MEDAL</span>}
+                                {item.type === "pokeball" && <span className="text-xs bg-blue-600 px-2 py-1 rounded">POKÉBALL</span>}
+                              </div>
+                              {owned ? (
+                                <div className="bg-gray-700 text-gray-400 py-2 rounded-lg font-bold text-xs sm:text-sm border-2 border-gray-600">
+                                  OWNED ✓
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => buyItem(item)}
+                                  disabled={balance < item.price}
+                                  className="w-full bg-gradient-to-b from-green-500 to-green-700 hover:from-green-400 hover:to-green-600 disabled:from-gray-600 disabled:to-gray-800 disabled:cursor-not-allowed py-2 rounded-lg font-bold text-white btn text-xs sm:text-sm border-2 border-green-800"
+                                >
+                                  {balance < item.price ? "NOT ENOUGH" : "BUY"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Coin Case Modal */}
+            {showCoinCase && (
+              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowCoinCase(false)}>
+                <div
+                  className="bg-gradient-to-b from-amber-900 via-yellow-900 to-amber-800 rounded-2xl sm:rounded-3xl border-4 border-amber-600 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto gba"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: "linear-gradient(180deg,#78350f 0%,#854d0e 50%,#92400e 100%)",
+                    boxShadow: "inset 0 0 0 4px rgba(217,119,6,.4),inset 0 3px 10px rgba(0,0,0,.5),0 20px 40px rgba(0,0,0,.8)",
+                  }}
+                >
+                  <div className="p-4 sm:p-6">
+                    <div className="flex justify-between items-center mb-4 sm:mb-6">
+                      <h2 className="text-xl sm:text-3xl font-bold text-yellow-200 lcd">💼 COIN CASE</h2>
+                      <button
+                        onClick={() => {
+                          sound("button");
+                          setShowCoinCase(false);
+                          setSelectedItem(null);
+                        }}
+                        className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg border-2 border-red-800 text-white font-bold btn text-sm sm:text-base"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {coinCase.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl sm:text-8xl mb-4 opacity-50">💼</div>
+                        <p className="text-yellow-200 text-lg sm:text-xl font-bold mb-2">Your Coin Case is empty!</p>
+                        <p className="text-yellow-300 text-sm sm:text-base">Visit the Shop to buy items!</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-4 bg-amber-950/80 p-3 rounded-lg border-2 border-amber-500">
+                          <div className="text-center">
+                            <span className="text-xs sm:text-sm text-amber-300 font-bold">COLLECTION</span>
+                            <div className="text-2xl sm:text-4xl font-bold text-amber-200">{coinCase.length} / {shopItems.length}</div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                          {coinCase.map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => {
+                                sound("button");
+                                setSelectedItem(item);
+                              }}
+                              className="bg-gradient-to-b from-amber-800 to-amber-900 rounded-xl border-4 border-amber-500 p-4 shadow-lg cursor-pointer hover:scale-105 transition-transform gba-item relative overflow-hidden"
+                              style={{
+                                boxShadow: "inset 0 0 0 2px rgba(245,158,11,.4),0 8px 16px rgba(0,0,0,.5)",
+                              }}
+                            >
+                              <div className="text-center">
+                                <div className="text-4xl sm:text-5xl mb-2 filter drop-shadow-lg" style={{ filter: "drop-shadow(4px 4px 8px rgba(0,0,0,.8))" }}>
+                                  {item.emoji}
+                                </div>
+                                <h3 className="text-xs sm:text-sm font-bold text-white">{item.name}</h3>
+                                <div className="mt-2 text-[8px] sm:text-[10px] text-amber-200">TAP TO VIEW</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Item Detail Modal */}
+            {selectedItem && (
+              <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
+                <div
+                  className="bg-gradient-to-b from-amber-800 via-yellow-800 to-amber-900 rounded-2xl sm:rounded-3xl border-4 border-amber-500 shadow-2xl max-w-md w-full gba"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: "linear-gradient(180deg,#92400e 0%,#a16207 50%,#78350f 100%)",
+                    boxShadow: "inset 0 0 0 4px rgba(245,158,11,.4),inset 0 3px 10px rgba(0,0,0,.5),0 20px 40px rgba(0,0,0,.8)",
+                  }}
+                >
+                  <div className="p-6 sm:p-8">
+                    <div className="text-center mb-6">
+                      <div className="text-8xl sm:text-9xl mb-4 filter drop-shadow-2xl animate-bounce" style={{ filter: "drop-shadow(6px 6px 12px rgba(0,0,0,.9))" }}>
+                        {selectedItem.emoji}
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-yellow-100 mb-2">{selectedItem.name}</h2>
+                      <div className="inline-block bg-amber-700 px-4 py-2 rounded-lg border-2 border-amber-600 mb-4">
+                        <span className="text-xs sm:text-sm text-amber-200 font-bold">
+                          {selectedItem.type === "medal" ? "🏅 GYM BADGE" : "⚪ POKÉBALL"}
+                        </span>
+                      </div>
+                      <p className="text-yellow-200 text-sm sm:text-base mb-4">{selectedItem.description}</p>
+                      <div className="bg-amber-950/60 p-3 rounded-lg border-2 border-amber-600">
+                        <div className="text-xs text-amber-300 mb-1">PURCHASED FOR</div>
+                        <div className="text-xl sm:text-2xl font-bold text-yellow-300">${selectedItem.price}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        sound("button");
+                        setSelectedItem(null);
+                      }}
+                      className="w-full bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 py-3 rounded-lg font-bold text-white btn text-base sm:text-lg border-2 border-red-800"
+                    >
+                      CLOSE
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       }
