@@ -1,15 +1,18 @@
-# Pokemon-Game-Corner-Slots
+# 🎰 Pokémon Game Corner Slots
 
-Play now!
-[Pokemon Game Corner](https://noah670.github.io/Pokemon-Game-Corner-Slots/).
-
-# 🎰 Pokémon Game Corner Mobile
-
-A mobile-optimized recreation of the classic Pokémon Game Corner from Generation 1-3 (FireRed, LeafGreen, Emerald), featuring slot machines, town exploration, and a prize redemption system.
+A mobile-friendly, single-file recreation of the classic Pokémon Game Corner from Generation 1-3 (FireRed, LeafGreen, Emerald), featuring slot machines, town exploration, and a prize redemption system.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/React-18.x-61dafb.svg)
+![Static](https://img.shields.io/badge/static-HTML%2FJS-orange.svg)
 ![Mobile](https://img.shields.io/badge/platform-mobile--first-brightgreen.svg)
+
+## 🌐 Live Preview (GitHub Pages)
+
+Once GitHub Pages is enabled, your live site will be available here:
+
+```
+https://<your-github-username>.github.io/Pokemon-Game-Corner-Slots/
+```
 
 ## ✨ Features
 
@@ -33,51 +36,26 @@ A mobile-optimized recreation of the classic Pokémon Game Corner from Generatio
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 16.x or higher
-- npm or yarn package manager
+### Run locally
 
-### Installation
+Open the game directly in your browser:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/pokemon-game-corner.git
-
-# Navigate to project directory
-cd pokemon-game-corner
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+# From the repo root
+open index.html
 ```
-
-The application will open at `http://localhost:5173`
 
 ## 🛠️ Technology Stack
 
-- **Frontend Framework**: React 18.x
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Build Tool**: Vite
+- **Frontend**: React 18 (CDN)
+- **Styling**: Tailwind CSS (CDN)
 - **Language**: JavaScript (ES6+)
 
 ## 📁 Project Structure
 
 ```
-pokemon-game-corner/
-├── src/
-│   ├── components/
-│   │   └── PokemonGameCorner.jsx    # Main game component
-│   ├── App.jsx                       # App entry point
-│   ├── index.css                     # Global styles
-│   └── main.jsx                      # React DOM render
-├── public/
-│   └── assets/                       # Images and sounds (optional)
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
+Pokemon-Game-Corner-Slots/
+├── index.html        # Single-file game (HTML + React + Tailwind via CDN)
 └── README.md
 ```
 
@@ -115,7 +93,7 @@ pokemon-game-corner/
 ## 🔧 Configuration
 
 ### Adjusting Starting Coins
-Edit the initial state in `PokemonGameCorner.jsx`:
+Edit the initial state in `index.html`:
 
 ```javascript
 const [coins, setCoins] = useState(500); // Change 500 to your desired amount
@@ -125,7 +103,7 @@ const [coins, setCoins] = useState(500); // Change 500 to your desired amount
 Update the `checkWin` function:
 
 ```javascript
-if (result[0] === '7') winAmount = bet * 100; // Adjust multipliers here
+if (result[0] === "7") winAmount = bet * 100; // Adjust multipliers here
 ```
 
 ### Adding New Prizes
@@ -133,7 +111,7 @@ Extend the `prizeList` array:
 
 ```javascript
 const prizeList = [
-  { name: 'Your Prize', cost: 1000, icon: '🎁' },
+  { name: "Your Prize", cost: 1000, icon: "🎁" },
   // Add more prizes...
 ];
 ```
@@ -158,37 +136,21 @@ const townMap = [
 ];
 ```
 
-## 📱 Building for Production
-
-```bash
-# Create optimized production build
-npm run build
-
-# Preview production build locally
-npm run preview
-```
-
-Build output will be in the `dist/` directory.
-
 ## 🚀 Deployment
 
-### Deploy to Netlify
-```bash
-npm run build
-# Drag and drop the 'dist' folder to Netlify
-```
-
-### Deploy to Vercel
-```bash
-npm run build
-vercel --prod
-```
-
 ### Deploy to GitHub Pages
-```bash
-npm install gh-pages --save-dev
-npm run build
-npx gh-pages -d dist
+1. Push this repository to GitHub.
+2. Go to **Settings → Pages**.
+3. Under **Build and deployment**, choose:
+   - **Source**: Deploy from a branch
+   - **Branch**: `main` (or your default branch)
+   - **Folder**: `/ (root)`
+4. Save, then wait 1-2 minutes for the site to publish.
+
+Your site will be available at:
+
+```
+https://<your-github-username>.github.io/Pokemon-Game-Corner-Slots/
 ```
 
 ## 🐛 Known Issues & Roadmap
@@ -241,7 +203,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🎯 Performance
 
-- Initial load: ~100KB (gzipped)
+- Instant load (single HTML file)
 - 60 FPS animations
 - Mobile-optimized touch events
 - Minimal re-renders with React hooks
